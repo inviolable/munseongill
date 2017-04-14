@@ -1,0 +1,1021 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+using System.Web;
+using System.IO;
+using System.Net;
+using Word = Microsoft.Office.Interop.Word;
+using System.Reflection;
+
+
+namespace http게시판글긁어오기
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+        string titleStr = null;
+        string strContents = null;
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            string url = "http://gall.dcinside.com/board/lists/";
+            string query = "?id=programming&no=710030&page=1";
+
+            HttpCookieCollection hc = new HttpCookieCollection();
+            HttpCookie hCookie = new HttpCookie("쿠키1");
+            HttpRequest hr = new HttpRequest(null, url, query);
+            HttpException he = new HttpException("http 처리 도중 에러가 발생하였습니다.");
+            HttpWriter hw;
+
+
+            byte[] stream = new byte[1000];
+
+            // stream = hr.BinaryRead(1);
+            string str = null;
+
+
+            //textBox1.Text += "내용 : " + str + "\r\n";
+            Stream st;
+
+            st = hr.InputStream;
+            textBox1.Text += "스트림 길이 : " + st.Length + "\r\n";
+
+
+            st.Read(stream, 0, (int)st.Length);
+
+            foreach (var i in stream)
+            {
+                str += Convert.ToString(stream[i]);
+            }
+
+
+            int count = 0;
+            try
+            {
+                textBox1.Text += "파일 경로 : " + hr.FilePath + "\r\n";
+                textBox1.Text += "길이 : " + hr.FilePath.Length + "\r\n";
+                textBox1.Text += "전송 방식 : " + hr.HttpMethod + "\r\n";
+                textBox1.Text += "내용 : " + str + "\r\n";
+
+                textBox1.Text += "콘텐츠 길이 : " + hr.ContentLength + "\r\n";
+                textBox1.Text += hr.Url.ToString() + "\r\n";
+                textBox1.Text += "호스트 주소 : " + hr.UserHostAddress + "\r\n";
+                textBox1.Text += "가져온 바이트 수 : " + hr.TotalBytes + "\r\n";
+                //textBox1.Text += "파일 경로 : " + hr.PhysicalPath + "\r\n"
+                hc = hr.Cookies;
+                textBox1.Text += "쿠기 갯수 : " + hc.Count + "\r\n";
+            }
+            catch (Exception he1)
+            {
+                textBox2.Text += he1.Message + "\r\n";
+                textBox2.Text += he1.HelpLink + "\r\n";
+                textBox2.Text += he1.StackTrace + "\r\n";
+
+            }
+
+
+
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            //asp.net으로 만든 홈페이지만 긁어 올 수 있는 것으로 보임(2017-3-19)
+            //아닐 수도 있음, 그리고 맞아도 asp.net 이외의 웹 언어로 만든 홈페이지도 긁어
+            //올 수 있는 방법 있으면 그것 찾아서 적용할 것임
+            byte[] bt = new byte[1000];
+            byte[] bt2 = new byte[1000];
+            byte[] bt3 = new byte[100000];
+
+            string url = "http://gall.dcinside.com/board/view/?id=programming&no=710055&page=1";
+            string url2 = "http://www.devpia.co.kr/";
+            string url3 = "http://www.devpia.co.kr/MAEUL/Contents/Detail.aspx?BoardID=69&MAEULNo=28&no=24621";
+
+            WebRequest request = WebRequest.Create(url3);
+            request.Credentials = CredentialCache.DefaultCredentials;
+            ((HttpWebRequest)request).UserAgent = ".NET Framework Example Client";
+            request.Method = "POST";
+            request.ContentLength = bt.Length;
+            request.ContentType = "application/x-www-form-urlencoded";
+
+            Stream dataStream = request.GetRequestStream();
+            dataStream.Write(bt, 0, bt.Length);
+
+            WebResponse response = request.GetResponse();
+            textBox1.Text += ((HttpWebResponse)response).StatusDescription + "\r\n";
+            Stream data = response.GetResponseStream();
+
+            data.Flush();
+
+            data.Read(bt2, 0, 1000);
+            //data.Read(bt3, 0, 1000);
+
+
+
+
+            string str = null;
+            string str2 = null;
+
+            //HttpWebRequest hwr = (HttpWebRequest)request;
+            //textBox1.Text += "인코딩 방식 : " + hwr.TransferEncoding + "\r\n";
+            /*foreach(var i in bt)
+            {
+                str += Convert.ToString(bt[i]);
+            }*/
+
+            //str2 = UnicodeEncoding.Unicode.GetString(bt2);
+            str2 = UnicodeEncoding.ASCII.GetString(bt2);
+            //string str11 = UnicodeEncoding.ASCII.GetString(bt3);
+            //와우 이게 정답이었네 !!
+            //근데 이 방식으로는 영어만 제대로 뜸 한글은 뜨지 않음 그래서 다른 방식이 필요 아래에 나옴
+
+            /* foreach (var i in bt3)
+             {
+                 str2 += Convert.ToString(bt3[i]);
+             }*/
+
+            //textBox1.Text += "받은 데이터 : " + str + "\r\n";
+            textBox1.Text += "받은 데이터2 : " + str2 + "\r\n";
+            int startIndex = str2.IndexOf("<title>");
+            textBox1.Text += "시작 인덱스 : " + startIndex + "\r\n";
+            int endIndex = str2.IndexOf("</title>");
+
+            string str3 = str2.Substring(startIndex + 7, endIndex - startIndex);
+            //startIndex+7 부분이 딱 <title> 뒤에 title 들어가 있는 부분 시작 위치
+            textBox1.Text += "제목 : " + str3 + "\r\n";
+
+            //Convert.ToByte(str3);
+            //string str4 = ASCIIEncoding.Unicode.GetString(bt2);
+            string str4 = ASCIIEncoding.Default.GetString(bt2);
+            //이 방식으로 한글도 뜨게 하는 것이 가능 !!
+            textBox1.Text += "현재 운영체제 인코딩 방식 : " + ASCIIEncoding.Default + "\r\n";
+            //이걸 출력해보니 현재 운영체제 인코딩 방식 : System.Text.DBCSCodePageEncoding
+            //로 나옴
+            //위에 str2 = UnicodeEncoding.ASCII.GetString(bt2); 쓰고
+            //아래에 string str4 = ASCIIEncoding.Default.GetString(bt2);
+            //이거 두번 쓸 필요 없이 그냥 아래에 있는
+            //string str4 = ASCIIEncoding.Default.GetString(bt2); 이거만 쓰면
+            //영어,한글 모두 정상적으로 보임
+
+            int startIndex2 = str4.IndexOf("<title>");
+            int endIndex2 = str4.IndexOf("</title>");
+
+            string str5 = str4.Substring(startIndex + 7, endIndex2 - startIndex2 - 7);
+            textBox1.Text += "제목(아스키 코드) : " + str5 + "\r\n";
+
+            titleStr = str5;
+
+            int bodystartIndex = 0;
+            int bodyendIndex = 0;
+            string str11 = null;
+            int off = 0;
+
+            while (true)
+            {
+                data.Read(bt3, off, 1000);
+                //bt3의 크기가 1000이면(위 정의에서 확인)
+                //off가 1000 이상이면 에러가 남
+                //왜인지는 모르겠음 추후 연구해 볼 것
+
+                str11 = UnicodeEncoding.ASCII.GetString(bt3);
+                bodystartIndex = str11.IndexOf("<body>");
+
+                if (bodystartIndex == -1)
+                {
+                    off += 1000;
+                    continue;
+                }
+
+                bodyendIndex = str11.IndexOf("</body>");
+
+                if (bodyendIndex == -1)
+                {
+                    off += 1000;
+                    continue;
+                }
+                break;
+            }
+
+            int i = 0;
+
+            /*
+            while (true)
+            {
+                string tempstr = Convert.ToString(bt3[i]);
+                if (tempstr.Equals('?') == true)
+                    textBox1.Text += "같음 \r\n";
+
+                i++;
+                if (bt3.Length == i)
+                    break;
+            }
+
+            textBox1.Text += "loop 빠져 나옴 " + i + "는 bt3의 크기 \r\n";
+
+             */
+
+
+
+            bodyendIndex = str11.IndexOf("</body>");
+            string str6 = str11.Substring(bodystartIndex, bodyendIndex);
+
+            textBox1.Text += "본문 : " + str6 + "\r\n";
+
+
+            textBox1.Text += "<body> 시작 인덱스 : " + bodystartIndex + "\r\n";
+
+            int startContentsIndex = 0;
+            int endContentsIndex = 0;
+            strContents = null;
+
+            strContents = ASCIIEncoding.Default.GetString(bt3);
+
+            startContentsIndex = strContents.IndexOf("<p>");
+            endContentsIndex = strContents.LastIndexOf("</p>");
+
+            strContents = strContents.Substring(startContentsIndex, endContentsIndex - startContentsIndex);
+
+            textBox1.Text += "본문 내용? " + strContents + "\r\n";
+
+            //indexof 메서드는 1개의 문자 패턴만 검색
+            //indexofany 메서드는 여러개의 문자 패턴을 배열 형식으로
+            //인수로 입력시키면 그 문자 패턴 들 아무거나라도
+            //처음 나타나는 인덱스를 리턴
+
+
+            /*
+        byte[] bodyContents = new byte[10000];
+        int startWriting = 0;
+        int i = 0;
+        bool check = false;
+        int j = 0;
+
+            
+        while (true)
+        {
+            string strtemp = Convert.ToString(bt3[i]);
+            if (strtemp.Equals("?") == true)
+            {
+                check = true;
+                bodyContents[j] += bt3[i];
+                j++;
+                textBox1.Text += "11\r\n";
+            }
+
+            i++;
+            if (check != true)
+                break;
+
+            check = false;
+        }
+
+
+        string bodyStr = ASCIIEncoding.Default.GetString(bodyContents);
+
+        textBox1.Text += "<body> 내용 : " + bodyStr + "\r\n";
+                        
+          */
+            dataStream.Close();
+            response.Close();
+        }
+
+        private void SaveFile(string contents)
+        {
+            //string filepath = @"c:\" + filename + ".txt";
+            //string filepath = @"c:\" + filename + ".txt";
+            string filepath = @"I:\test\test.txt";
+
+            //string contents1 = change(contents);
+            //글을 적절한 형식으로 구성해주는 함수
+            //현재 구현 중
+            bool ex = false;
+            ex = File.Exists(filepath);
+            if (ex == true)
+            {
+
+                //StreamWriter sw = new StreamWriter(filepath);
+
+                //sw = File.AppendText(filepath);
+                //sw.Write("\r\n\r\n\r\n\r\n");
+                //sw.Write(contents);
+
+                //textBox2.Text += "저장 완료 \r\n";
+                //sw.Close();
+                File.AppendAllText(filepath, "\r\n\r\n\r\n");
+
+                //return;
+            }
+
+            File.AppendAllText(filepath, contents);
+            //File.WriteAllText(filepath, contents, Encoding.Default);
+
+
+            //textBox2.Text += "저장 완료 \r\n";
+        }
+
+        private void SaveAllFiles(string filename, string contents)
+        {
+
+        }
+        private void button3_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private string change(string contents)
+        {
+            string str = contents.Trim();
+            return str;
+
+        }
+
+        private void test1(string _url)
+        {
+            //본문 내용만 긁어오기 위해서는 태그를 활용해야되는데
+            //특히 <p>태그가 개행으로 글 있는데만 나오니까 그걸 활용하자
+
+            byte[] bt = new byte[30000];
+            byte[,] bt2 = new byte[1000, 1000];//다른 언어와는 다른 c#의 독특한 2차원 배열 선언방법
+            //유의할 것
+            byte[] bt3 = new byte[2000000];
+            byte[] bt4 = new byte[30000];
+            byte[] bt5 = new byte[30000];
+
+
+            string url = "http://gall.dcinside.com/board/view/?id=programming&no=710055&page=1";
+            string url2 = "http://www.devpia.co.kr/";
+            string url3 = "http://www.devpia.co.kr/MAEUL/Contents/Detail.aspx?BoardID=69&MAEULNo=28&no=24621";
+
+            url3 = _url;
+
+            WebRequest request = WebRequest.Create(url3);
+            request.Credentials = CredentialCache.DefaultCredentials;
+            ((HttpWebRequest)request).UserAgent = ".NET Framework Example Client";
+            request.Method = "POST";
+            request.ContentLength = bt.Length;
+            request.ContentType = "application/x-www-form-urlencoded";
+
+            Stream dataStream = request.GetRequestStream();
+            dataStream.Write(bt, 0, bt.Length);
+
+            WebResponse response = request.GetResponse();
+            textBox3.Text += ((HttpWebResponse)response).StatusDescription + "\r\n";
+            Stream data = response.GetResponseStream();
+
+                       
+
+            data.Flush();
+
+            int c = 0;
+            int c1 = 0;
+            int i = 0;
+            int count = 0;
+
+            while (true)
+            {
+                c1 = data.Read(bt3, count * 1000, 1000);
+                //textBox3.Text += count + "회차\r\n";
+                //textBox3.Text += "c1 : " + c1 + "\r\n";
+                string str = ASCIIEncoding.Default.GetString(bt3);
+                c = str.IndexOf("</HTML>");
+                if (c != -1)
+                    break;
+
+                count++;
+
+
+                /*
+                if (count == 100)
+                {
+                    textBox3.Text += "test 함수 오류\r\n";
+                    return;
+                }
+                 */
+
+            }
+
+            //textBox3.Text += count.ToString() + "번 루프 돌았음\r\n";
+            //return;
+
+            string str1 = ASCIIEncoding.Default.GetString(bt3);
+            int c11 = str1.IndexOf("<HTML>");
+            int c22 = str1.IndexOf("</HTML>");
+
+            if ((c11 == -1) || (c22 == -1))
+            {
+                textBox3.Text += "<HTML> 태그 혹은 </HTML> 태그를 발견하지 못하였습니다.\r\n";
+                return;
+            }
+
+            //textBox3.Text += "완료\r\n";
+            //textBox3.Text += "<HTML> : " + c11 + ", </HTML> : " + c22 + "\r\n";
+            //textBox3.Text += "내용 크기 : " + str1.Length + "\r\n";
+            string title = null;
+            string contents = null;
+            string totalform = null;
+
+            //textBox3.Text += "길이 : " + str1.Length + "\r\n";
+            //return;
+
+            title = 제목추출(str1);
+            if (title == null)
+            {
+                return;
+            }
+            //textBox3.Text += "제목 추출까지 완료\r\n";
+            //return;
+
+            contents = 내용추출(str1);
+            if (contents == null)
+            {
+                return;
+            }
+            totalform = "제목 : " + title + "\r\n\r\n" + contents;
+            //totalform = "마을 번호 : " + textBox9.Text + "(비사모마을),"
+            //위와 같이 표시되도록 나중에 하자
+            //비사모마을 이거는 나중에 맵(자료 구조 중 하나)같은걸로해서
+            //1-비사모마을,2-c#마을,3-c++마을, 이런식으로 하드 코딩해서
+            //번호로 어떤 마을인지까지 표시되게 하자. 기록되게 하자
+
+            SaveFile(totalform);
+
+            //textBox3.Text += "내용 : " + str1 + "\r\n";
+
+
+            /*
+            c = data.Read(bt2, 0, 30000);//리턴 값 아마도 읽는데 성공한 바이트 수
+            //크기 10000으로 하니까 한번에 다 읽히네 오 굿
+            //3779바이트 읽음 으로 나옴
+                        
+            textBox3.Text += c + "바이트 읽음\r\n";
+            string str = ASCIIEncoding.Default.GetString(bt2);
+            textBox3.Text += "길이 : " + str.Length + "\r\n";*/
+
+
+
+
+            //c1 = data.Read(bt3, c, 10000);
+            //textBox3.Text += c1 + "바이트 읽음\r\n";
+            /*
+            
+            string str = ASCIIEncoding.Default.GetString(bt2);
+
+            textBox3.Text += "내용 : " + str + "\r\n";
+            //byte배열 <-> string 상호 변환 함수는 있는듯
+            //직렬화, 역직렬화(serialization, un~)
+            textBox3.Text += "제목 추출 : " + 제목추출(str) + "\r\n";
+
+            c = data.Read(bt2, 0, 10000);
+            
+            textBox3.Text += c + "바이트 읽음\r\n";
+
+            str = ASCIIEncoding.Default.GetString(bt2);
+
+            내용추출(str);*/
+            dataStream.Close();
+            data.Close();
+
+
+        }
+
+        int first = 0;
+        int last = 0;
+        int no = 0;
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            first = Convert.ToInt32(textBox5.Text);
+            last = Convert.ToInt32(textBox6.Text);
+
+            for (no = first; no <= last; no++)
+            {
+                string url = "http://www.devpia.com/MAEUL/Contents/Detail.aspx?BoardID=" + textBox8.Text +
+                    "&MAEULNO=" + textBox9.Text + "&no=" + no + "&page=" + textBox7.Text;
+                test1(url);
+                textBox3.Text += no + "번 글 저장완료\r\n";
+            }
+
+        }
+
+        private string 제목추출(string contents)
+        {
+            int startIndex = contents.IndexOf("<title>");
+            int endIndex = contents.IndexOf("</title>");
+
+            if ((startIndex == -1) || (endIndex == -1))
+            {
+                textBox3.Text += no + "번 제목 추출에 실패하였습니다.\r\n";
+                return null;
+            }
+
+            string titleStr = contents.Substring(startIndex + 7, endIndex - startIndex - 7);
+            textBox3.Text += "제목추출 완료\r\n";
+
+            return titleStr;
+            //textBox3.Text += "제목 추출 : " + titleStr + "\r\n";
+        }
+
+        private string 내용추출(string contents)
+        {
+            string allContents = null;
+
+            int index = -1;
+            int index2 = -1;
+            int nextIndex = 0;
+            int count = 0;
+
+            //textBox3.Text += "내용2 :" + contents + "\r\n";
+            while (true)
+            {
+                index2 = contents.IndexOf("<p>", index + 1);
+
+                if (index2 == -1)
+                {
+                    index2 = contents.IndexOf("<P>", index + 1);
+                    if (index2 == -1)
+                        break;
+
+                }
+                index = index2;
+                //textBox3.Text += "index1 : " + index1 + "\r\n";
+                index2 = contents.IndexOf("</p>", index + 1);
+
+                if (index2 == -1)
+                {
+                    index2 = contents.IndexOf("</P>", index + 1);
+                    if (nextIndex == -1)
+                        break;
+                }
+                nextIndex = index2;
+
+                //textBox3.Text += "nextIndex : " + nextIndex + "\r\n";
+                index += 3;
+
+                string str = contents.Substring(index, nextIndex - index);
+                str = str.Trim();//str.Trim() 이렇게 쓰면 절대 효과가 안나타난다 주의!!
+                //함수 리턴이 있는지 없는지를 잘 볼 것 메서드 쓸 때 !!
+
+                allContents += str + "\r\n";
+                textBox2.Text += allContents;
+                //count++;
+
+                //if(count == 5)
+                // return null;
+
+                index = nextIndex;
+                //textBox2.Text += "index : " + index + ", nextIndex : " + nextIndex + "\r\n";
+            }
+            //textBox3.Text += "완료\r\n";
+            //string str111 = 문자열_배열_합치기(allContents);
+
+            //textBox3.Text += "전체 내용 : " +  allContents + "\r\n";
+            if (allContents == null)
+            {
+                textBox3.Text += no + "번 내용 추출에 실패하였습니다.\r\n";
+                return null;
+            }
+
+            textBox3.Text += "내용추출 완료\r\n";
+
+            return allContents;
+        }
+
+        private void textBox9_TextChanged(object sender, EventArgs e)
+        {
+            //나중에는 마을 번호 combo 박스로 해가지고
+            //선택할 수 있게
+            //c++마을, c# 마을, .net마을 등등 이런식으로해서 선택하면 해당 id값이 잡히도록
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            test1(textBox4.Text);
+            textBox3.Text += "글 1개 저장완료.\r\n";
+        }
+
+        private void button9_Click(object sender, EventArgs e)
+        {
+            object oMissing = System.Reflection.Missing.Value;
+            object oEndOfDoc = "\\endofdoc";
+
+            Word._Application oWord;
+            Microsoft.Office.Interop.Word._Document oDoc;
+            oWord = new Microsoft.Office.Interop.Word.Application();
+            oWord.Visible = true;
+            oDoc = oWord.Documents.Add(ref oMissing, ref oMissing, ref oMissing, ref oMissing);
+
+            Microsoft.Office.Interop.Word.Paragraph oPara1;
+            oPara1 = oDoc.Content.Paragraphs.Add(ref oMissing);
+            oPara1.Range.Text = "Heading 1";
+            oPara1.Range.Font.Bold = 1;
+            oPara1.Format.SpaceAfter = 24;
+            oPara1.Range.InsertParagraphAfter();
+
+            Microsoft.Office.Interop.Word.Paragraph oPara2;
+            object oRng = oDoc.Bookmarks.get_Item(ref oEndOfDoc).Range;
+            oPara2 = oDoc.Content.Paragraphs.Add(ref oRng);
+            oPara2.Range.Text = "Heading 2";
+            oPara2.Format.SpaceAfter = 6;
+            oPara2.Range.InsertParagraphAfter();
+
+            Microsoft.Office.Interop.Word.Paragraph oPara3;
+            oRng = oDoc.Bookmarks.get_Item(ref oEndOfDoc).Range;
+            oPara3 = oDoc.Content.Paragraphs.Add(ref oRng);
+            oPara3.Range.Text = "This is a sentence of normal text. Now here is a table;";
+            oPara3.Range.Font.Bold = 0;
+            oPara3.Format.SpaceAfter = 24;
+            oPara3.Range.InsertParagraphAfter();
+
+            Microsoft.Office.Interop.Word.Table oTable;
+            Microsoft.Office.Interop.Word.Range wrdRng = oDoc.Bookmarks.get_Item(ref oEndOfDoc).Range;
+            oTable = oDoc.Tables.Add(wrdRng, 3, 5, ref oMissing, ref oMissing);
+            oTable.Range.ParagraphFormat.SpaceAfter = 6;
+            int r, c;
+            string strText;
+            for (r = 1; r <= 3; r++)
+                for (c = 1; c <= 5; c++)
+                {
+                    strText = "r" + r + "c" + c;
+                    oTable.Cell(r, c).Range.Text = strText;
+                }
+            oTable.Rows[1].Range.Font.Bold = 1;
+            oTable.Rows[1].Range.Font.Italic = 1;
+
+
+            Microsoft.Office.Interop.Word.Paragraph oPara4;
+            oRng = oDoc.Bookmarks.get_Item(ref oEndOfDoc).Range;
+            oPara4 = oDoc.Content.Paragraphs.Add(ref oRng);
+            oPara4.Range.InsertParagraphBefore();
+            oPara4.Range.Text = "And here's another table:";
+            oPara4.Format.SpaceAfter = 24;
+            oPara4.Range.InsertParagraphAfter();
+
+            wrdRng = oDoc.Bookmarks.get_Item(ref oEndOfDoc).Range;
+            oTable = oDoc.Tables.Add(wrdRng, 5, 2, ref oMissing, ref oMissing);
+
+            for (r = 1; r <= 5; r++)
+                for (c = 1; c <= 2; c++)
+                {
+                    strText = "r" + r + "c" + c;
+                    oTable.Cell(r, c).Range.Text = strText;
+                }
+
+            oTable.Columns[1].Width = oWord.InchesToPoints(2);
+            oTable.Columns[2].Width = oWord.InchesToPoints(3);
+
+            System.Threading.Thread.CurrentThread.SetApartmentState(System.Threading.ApartmentState.STA);
+            //헐 안되네??
+            object oPos;
+            try
+            {
+                double dPos = oWord.InchesToPoints(7);
+
+                oDoc.Bookmarks.get_Item(ref oEndOfDoc).Range.InsertParagraphAfter();
+
+
+
+                do
+                {
+                    wrdRng = oDoc.Bookmarks.get_Item(ref oEndOfDoc).Range;
+                    wrdRng.ParagraphFormat.SpaceAfter = 6;
+                    wrdRng.InsertAfter("A line of text");
+                    wrdRng.InsertParagraphAfter();
+                    oPos = wrdRng.get_Information(Microsoft.Office.Interop.Word.WdInformation.wdVerticalPositionRelativeToPage);
+                }
+                while (dPos >= Convert.ToDouble(oPos));
+
+
+
+                object oCollapseEnd = Microsoft.Office.Interop.Word.WdCollapseDirection.wdCollapseEnd;
+                object oPageBreak = Microsoft.Office.Interop.Word.WdBreakType.wdPageBreak;
+                wrdRng.Collapse(ref oCollapseEnd);
+                wrdRng.InsertBreak(ref oPageBreak);
+                wrdRng.Collapse(ref oCollapseEnd);
+                wrdRng.InsertAfter("We're now on page 2. Here's my chart:");
+                wrdRng.InsertParagraphAfter();
+
+
+
+                //Insert a chart.
+                Word.InlineShape oShape;
+                object oClassType = "MSGraph.Chart.8";
+                wrdRng = oDoc.Bookmarks.get_Item(ref oEndOfDoc).Range;
+                oShape = wrdRng.InlineShapes.AddOLEObject(ref oClassType, ref oMissing,
+                ref oMissing, ref oMissing, ref oMissing,
+                ref oMissing, ref oMissing, ref oMissing);
+
+
+                //Demonstrate use of late bound oChart and oChartApp objects to
+                //manipulate the chart object with MSGraph.
+                object oChart;
+                object oChartApp;
+                oChart = oShape.OLEFormat.Object;
+                oChartApp = oChart.GetType().InvokeMember("Application",
+                BindingFlags.GetProperty, null, oChart, null);
+
+                //Change the chart type to Line.
+                object[] Parameters = new Object[1];
+                Parameters[0] = 4; //xlLine = 4
+                oChart.GetType().InvokeMember("ChartType", BindingFlags.SetProperty,
+                null, oChart, Parameters);
+
+                //Update the chart image and quit MSGraph.
+                oChartApp.GetType().InvokeMember("Update",
+                BindingFlags.InvokeMethod, null, oChartApp, null);
+                oChartApp.GetType().InvokeMember("Quit",
+                BindingFlags.InvokeMethod, null, oChartApp, null);
+                //... If desired, you can proceed from here using the Microsoft Graph 
+                //Object model on the oChart and oChartApp objects to make additional
+                //changes to the chart.
+
+                //Set the width of the chart.
+                oShape.Width = oWord.InchesToPoints(6.25f);
+                oShape.Height = oWord.InchesToPoints(3.57f);
+
+                //Add text after the chart.
+                wrdRng = oDoc.Bookmarks.get_Item(ref oEndOfDoc).Range;
+                wrdRng.InsertParagraphAfter();
+                wrdRng.InsertAfter("THE END.");
+
+                //Close this form.
+                this.Close();
+
+            }
+            catch (Exception e11)
+            {
+                textBox2.Text += "에러 메시지 : " + e11.Message + "\r\n";
+                textBox2.Text += "예외를 발생시키는 메서드 : " + e11.TargetSite + "\r\n";
+
+            }
+
+
+        }
+
+        /*
+        private string 문자열_배열_합치기(string[] str)
+        {
+            int len = str.Length;
+            string strall = null;
+            for (int i = 0; i < len; i++)
+            {
+                strall += str[i];
+            }
+
+            return strall;
+
+        }*/
+        //필요에 의해 만들었으나 생각해보니 만들 필요 없을듯, 개행 문자열("\r\n") 
+        //넣으면 해결될 일.
+
+        private void 워드연동(string title, string content, string 댓글)
+        {
+            object oMissing = System.Reflection.Missing.Value;
+            object oEndOfDoc = "\\endofdoc";
+
+
+            Microsoft.Office.Interop.Word._Application oWord;
+            Microsoft.Office.Interop.Word._Document oDoc;
+            oWord = new Microsoft.Office.Interop.Word.Application();
+            oWord.Visible = true;
+            oDoc = oWord.Documents.Add(ref oMissing, ref oMissing, ref oMissing, ref oMissing);
+
+            Microsoft.Office.Interop.Word.Paragraph oPara1;
+            oPara1 = oDoc.Content.Paragraphs.Add(ref oMissing);
+            oPara1.Range.Text = title;
+            oPara1.Range.Font.Bold = 1;
+            oPara1.Format.SpaceAfter = 24;
+            oPara1.Range.InsertParagraphAfter();
+
+        }
+        WebBrowser wb;
+
+        
+        private void button7_Click(object sender, EventArgs e)
+        {
+            string _url = textBox4.Text;
+            byte[] bt = new byte[100000];
+
+            try
+            {
+                wb = new WebBrowser();
+
+                //Uri ur = new Uri("http://www.devpia.co.kr/");
+                //wb.Navigated += new WebBrowserNavigatedEventHandler(web_navigated);
+
+                wb.DocumentCompleted += new WebBrowserDocumentCompletedEventHandler(document_completed);
+
+                wb.Navigate("http://www.devpia.com/MAEUL/Contents/Detail.aspx?BoardID=69&MAEULNO=28&no=24638&page=1");
+                
+
+                textBox2.Text += "여기가 몇번 발생하는지\r\n";
+                return;
+
+                /*
+                textBox2.Text += wb.Url + "\r\n";
+                if (wb == null)
+                {
+                    textBox2.Text += "wb가 null입니다.\r\n";
+                }
+                else
+                    textBox2.Text += "wb는 null이 아닙니다.\r\n";
+
+                if (wb.Url == null)
+                {
+                    textBox2.Text += "wb.url이 null입니다.\r\n";
+                }
+                HtmlDocument hd = wb.Document;
+
+                if (hd == null)
+                {
+                    textBox2.Text += "hd가 null입니다.\r\n";
+                    return;
+                }
+                //이 아래에서 오류 발생
+
+                //HtmlElement heUser = hd.GetElementById("user");
+                //HtmlElement hePassword = hd.GetElementById("password");
+                
+                HtmlElement heForm = hd.GetElementById("Form1");
+
+                if (heForm == null)
+                    textBox2.Text += "해당 id의 엘리먼트가 없습니다.\r\n";
+                //string str = heForm.InnerHtml;
+                //textBox2.Text += str + "\r\n";
+                //이 위에서 오류 발생
+                /*
+                heUser.SetAttribute("value", "inviolable");
+                hePassword.SetAttribute("value", "10041032");
+                heForm.InvokeMember("submit");
+                 */
+            }
+            catch (Exception e1)
+            {
+                textBox2.Text += e1.Message + "\r\n";
+                textBox2.Text += e1.TargetSite + "\r\n";
+            }
+            
+
+                        
+            
+        }
+
+        void web_navigated(object sender, WebBrowserNavigatedEventArgs e)
+        {
+            //textBox2.Text += wb.Url + "\r\n";
+
+            HtmlDocument hd = wb.Document;
+
+            //HtmlElementCollection hdcol = hd.Forms;
+            HtmlElement he = hd.GetElementById("fLogin");
+
+            if (he == null)
+                textBox2.Text += "he는 null입니다.\r\n";
+            else
+            {
+                HtmlElementCollection he2 = he.GetElementsByTagName("input");
+
+                if (he2 != null)
+                {
+                    //value는 그 값을 말함
+                    he2[0].SetAttribute("value", "inviolable");
+                    he2[1].SetAttribute("value", "10041032");
+                    he.InvokeMember("submit");
+
+                    textBox2.Text += "로그인 되었습니다.\r\n";
+                }
+            }
+
+            
+             
+            //HtmlElement heForm = hd.GetElementById("body");
+
+            //HtmlElementCollection hdcol = heForm.GetElementsByTagName("form");
+            //textBox2.Text += "form 태그 갯수 : " + hdcol.Count + "개\r\n";
+
+            /*
+            //if (Height == null)
+               // textBox2.Text += "해당 html 문서가 없습니다.\r\n";
+            //else
+               // textBox2.Text += "해당 html 문서의 url은 " + hd.Url + "입니다.\r\n";
+
+            //textBox2.Text += "해당 html문서의 title은 " + hd.Title + "입니다.\r\n";
+            //HtmlElementCollection hdcol = hd.Forms;
+            //textBox2.Text += "html form 요소 갯수 " + hdcol.Count + "개\r\n";
+            HtmlElement heForm = hd.GetElementById("Form1");
+
+            if (heForm == null)
+                //textBox2.Text += "heForm은 null입니다.\r\n";
+            else
+            {
+                //textBox2.Text += "form의 innerHtml = " + heForm.InnerHtml + "\r\n";
+                HtmlElementCollection hdcol = heForm.GetElementsByTagName("body");
+                textBox2.Text += "body 태그 갯수 : " + hdcol.Count + "개\r\n";
+                
+            }
+                       
+            */
+
+        }
+
+        int count = 0;
+        void document_completed(object sender, WebBrowserDocumentCompletedEventArgs e)
+        {
+            count++;
+            textBox1.Text += count + "번 발생\r\n";
+
+            /*
+            //왜 여기가 이 이벤트가 발생하는건지 알 수가 없음
+            HtmlDocument hd = wb.Document;
+            
+            //HtmlElementCollection hdcol = hd.Forms;
+            //HtmlElementCollection he = hd.GetElementsByTagName("body");
+            //foreach문은 배열의 경우에만 사용 가능, 이 경우는 콜렉션이므로 사용 불가능
+
+            //textBox1.Text += he.Count + "\r\n";
+            HtmlElementCollection hp = hd.GetElementsByTagName("p");
+            HtmlElementCollection hdiv = hd.GetElementsByTagName("div");
+
+            textBox1.Text += "p 태그 갯수 : " + hp.Count + "\r\n";
+            textBox1.Text += "div 태그 갯수 : " + hdiv.Count + "\r\n";
+
+            for (int i = 0; i < hp.Count; i++)
+            {
+                
+                string str = hp[i].InnerText + "\r\n";
+                textBox1.Text += str;
+            }
+
+            for (int i = 0; i < hdiv.Count; i++)
+            {
+                if (hdiv[i].Id.CompareTo("comment_zone") == 0)
+                    continue;
+                string str = hdiv[i].InnerText + "\r\n";
+                textBox1.Text += str;
+            }           
+                        
+
+                
+            /*
+
+            if (he == null)
+                textBox2.Text += "he는 null입니다.\r\n";
+            else
+            {
+                HtmlElementCollection he2 = he.GetElementsByTagName("input");
+
+                if (he2 != null)
+                {
+                    //value는 그 값을 말함
+                    he2[0].SetAttribute("value", "inviolable");
+                    he2[1].SetAttribute("value", "100410321");
+                    he.InvokeMember("submit");
+
+                    textBox2.Text += "로그인 되었습니다.\r\n";
+                    
+                }
+            }*/
+            
+
+        }
+
+        private void test2(string url)
+        {
+            byte[] bt = new byte[1000000];
+            WebRequest request = WebRequest.Create(url);
+            request.Credentials = CredentialCache.DefaultCredentials;
+            ((HttpWebRequest)request).UserAgent = ".NET Framework Example Client";
+            request.Method = "POST";
+            request.ContentLength = bt.Length;
+            request.ContentType = "application/x-www-form-urlencoded";
+
+            Stream dataStream = request.GetRequestStream();
+            dataStream.Write(bt, 0, bt.Length);
+
+            WebResponse response = request.GetResponse();
+            textBox3.Text += ((HttpWebResponse)response).StatusDescription + "\r\n";
+            Stream data = response.GetResponseStream();
+
+            int length = data.Read(bt, 0, 1000000);
+            textBox1.Text += "읽은 길이 : " + length + "\r\n";
+
+
+                        
+                
+        }
+
+        private void button10_Click(object sender, EventArgs e)
+        {
+            test2(textBox4.Text);
+        }
+
+
+    }
+
+}
